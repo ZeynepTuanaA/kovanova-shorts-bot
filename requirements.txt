@@ -1,0 +1,11 @@
+google-generativeai
+google-cloud-texttospeech
+moviepy
+requests
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+schedule
+python-dotenv
+imageio==2.34.2
+imageio-ffmpeg==0.5.1
