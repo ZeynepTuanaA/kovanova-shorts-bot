@@ -44,11 +44,11 @@ def create_video():
     clips = []
     for img_path in image_files:
         # Resize/Crop işlemi yapılarak 1080x1920 boyutuna tam oturtulur
-        clip = ImageClip(img_path).with_duration(duration_per_image).resized(width=1080, height=1920)
+        clip = ImageClip(img_path).with_duration(duration_per_image).resized(width=1080, height=1920).with_fps(24)
         clips.append(clip)
         
     # Görselleri arka arkaya birleştir
-    video = concatenate_videoclips(clips, method="compose")
+    video = concatenate_videoclips(clips, method="chain")
     
     # Sesi videoya ekle
     video = video.with_audio(audio)
@@ -85,7 +85,7 @@ def create_video():
     print(f"Video {output_path} adıyla dışa aktarılıyor... Lütfen bekleyin.")
     video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
     
-    print("✅ Video montajı başarıyla tamamlandı!")
+    print("Video montajı başarıyla tamamlandı!")
 
 if __name__ == "__main__":
     create_video()

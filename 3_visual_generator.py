@@ -17,8 +17,10 @@ def generate_images(prompts, output_dir="images"):
         enhanced_prompt = f"{prompt}, cinematic lighting, photorealistic, highly detailed, 8k resolution, vertical video format"
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
-        # Pollinations AI API'si ile en yüksek kalite ayarları (model=flux, enhance=true)
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true&model=flux&enhance=true"
+        import random
+        seed = random.randint(1, 99999999)
+        # Pollinations AI API'si ile en yüksek kalite ayarları (model=flux, enhance=true) ve rastgele seed
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true&model=flux&enhance=true&seed={seed}"
         output_path = os.path.join(output_dir, f"image_{i+1}.jpg")
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})

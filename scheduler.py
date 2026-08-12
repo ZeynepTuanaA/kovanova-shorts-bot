@@ -24,9 +24,11 @@ def initialize_secrets():
 # İlk başta secret'ları başlat
 initialize_secrets()
 
+import sys
+
 # Sistemin kurulduğu dizin (Kovanova_Shorts klasörü)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PYTHON_EXEC = os.path.join(BASE_DIR, ".venv", "Scripts", "python.exe")
+PYTHON_EXEC = sys.executable
 
 def run_step(script_name):
     """Belirtilen Python betiğini çalıştırır ve sonucunu döner."""

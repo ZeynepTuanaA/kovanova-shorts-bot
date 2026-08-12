@@ -71,8 +71,12 @@ def generate_zodiac_script(zodiac_sign="Koç"):
         return None
 
 if __name__ == "__main__":
-    print(f"Senaryo üretiliyor...")
-    result = generate_zodiac_script("Koç")
+    import random
+    zodiac_signs = ["Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak", "Kova", "Balık"]
+    selected_sign = random.choice(zodiac_signs)
+    
+    print(f"Senaryo üretiliyor... (Seçilen Burç: {selected_sign})")
+    result = generate_zodiac_script(selected_sign)
     
     if result:
         with open("current_script.json", "w", encoding="utf-8") as f:
