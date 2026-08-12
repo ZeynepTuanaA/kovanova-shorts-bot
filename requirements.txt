@@ -1,4 +1,4 @@
-google-generativeai
+google-genai
 google-cloud-texttospeech
 moviepy
 requests
@@ -9,3 +9,6 @@ schedule
 python-dotenv
 imageio==2.34.2
 imageio-ffmpeg==0.5.1
+Pillow
+openai-whisper
+numpy

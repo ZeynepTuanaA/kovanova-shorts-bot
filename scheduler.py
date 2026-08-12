@@ -2,7 +2,17 @@ import schedule
 import time
 import subprocess
 import os
+import sys
 import base64
+import shutil
+
+# Türkiye Saati (UTC+3) Ayarı
+os.environ['TZ'] = 'Europe/Istanbul'
+if hasattr(time, 'tzset'):
+    try:
+        time.tzset()
+    except Exception:
+        pass
 
 def initialize_secrets():
     # Railway'den gelen Base64 şifreleri dosyalara dönüştür (eğer varsa)
@@ -24,11 +34,29 @@ def initialize_secrets():
 # İlk başta secret'ları başlat
 initialize_secrets()
 
-import sys
-
 # Sistemin kurulduğu dizin (Kovanova_Shorts klasörü)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PYTHON_EXEC = sys.executable
+
+def get_python_exec():
+    """Çalıştırma ortamına göre doğru Python çalıştırıcısını bulur."""
+    if os.path.exists(sys.executable):
+        # Windows venv yolu Linux'ta geçersizdir (.venv/Scripts/python.exe -> .venv/bin/python)
+        if os.name == 'posix' and sys.executable.endswith('python.exe'):
+            alt = sys.executable.replace('\\', '/').replace('Scripts/python.exe', 'bin/python').replace('Scripts/python', 'bin/python')
+            if os.path.exists(alt):
+                return alt
+        else:
+            return sys.executable
+
+    # Linux / Container üzerindeki olası Python yolları
+    for p in ['/opt/venv/bin/python', '/app/.venv/bin/python', '/usr/bin/python3', 'python3', 'python']:
+        if os.path.exists(p) or shutil.which(p):
+            return p
+            
+    return sys.executable
+
+PYTHON_EXEC = get_python_exec()
+print(f"[+] Kullanılan Python Yolu: {PYTHON_EXEC}")
 
 def run_step(script_name):
     """Belirtilen Python betiğini çalıştırır ve sonucunu döner."""
@@ -44,6 +72,9 @@ def run_step(script_name):
     except subprocess.CalledProcessError as e:
         print(f"[{time.strftime('%H:%M:%S')}] HATA: {script_name} çalışırken hata verdi!")
         print(f"Hata kodu: {e.returncode}")
+        return False
+    except Exception as e:
+        print(f"[{time.strftime('%H:%M:%S')}] BEKLENMEYEN HATA: {script_name} - {e}")
         return False
 
 def job_create_and_upload():
@@ -70,19 +101,19 @@ def job_create_and_upload():
     print(f"✅ GÖREV TAMAMLANDI! YENİ VİDEO YOUTUBE'A YÜKLENDİ.")
     print(f"=======================================================\n")
 
-
 def main():
     print("Kovanova Studios Otomatik Zamanlayıcı Başlatıldı!")
     print("Sistem arka planda bekliyor...")
     
     # -------------------------------------------------------------------
-    # SAATLERİ BURADAN DEĞİŞTİREBİLİRSİNİZ
+    # SAATLERİ BURADAN DEĞİŞTİREBİLİRSİNİZ (Türkiye Saati: 10:00, 15:00, 20:00)
     # -------------------------------------------------------------------
     schedule.every().day.at("10:00").do(job_create_and_upload)
     schedule.every().day.at("15:00").do(job_create_and_upload)
     schedule.every().day.at("20:00").do(job_create_and_upload)
     
-    print("Ayarlanan saatler: 10:00, 15:00, 20:00")
+    print("Ayarlanan saatler (Türkiye Saati): 10:00, 15:00, 20:00")
+    print(f"Şu anki sistem zamanı: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     print("Kapatmak için CTRL+C tuşlarına basabilirsiniz.\n")
 
     # Bekleme döngüsü

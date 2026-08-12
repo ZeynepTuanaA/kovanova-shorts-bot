@@ -25,13 +25,12 @@ def generate_zodiac_script(zodiac_sign="Koç"):
     bugun = datetime.datetime.now().strftime("%d %B %Y")
     
     concepts = [
-        "Mistik Orman ve Toprak Büyüsü", "Kozmik Uzay ve Yıldız Tozu", "Gölge ve Işık Kontrastı (Film Noir)", 
-        "Antik Tapınak ve Altın Dokunuşlar", "Karanlık Fantezi ve Neon Renkler", "Kristal Mağara ve Büyülü Aura", 
-        "Siberpunk Astroloji ve Hologramlar", "Gotik Estetik ve Kırmızı Güller", "Rönesans Tablosu Tarzı",
-        "Su Altı Dünyası ve İnciler", "Çöl Kumları ve Güneş Tutulması", "Buzul Krallığı ve Mavi Alevler"
+        "Mistik Astroloji ve Yıldız Haritaları", "Kozmik Galaksi ve Nebula", "Tarot Kartı Estetiği", 
+        "Altın Oran ve Kutsal Geometri", "Rüya Alemi ve Pastel Tonlar", "Sulu Boya Astrolojik Figürler", 
+        "Zodyak Çarkı ve Kozmik Işıklar", "Eterik Aura ve Parlayan Takımyıldızlar", "Rönesans Astrolojisi",
+        "Kristal Astroloji ve Şifa Enerjisi", "Güneş Tutulması ve Kozmik Kapı", "Masalsı Gökyüzü ve Burç Sembolleri"
     ]
     random_concept = random.choice(concepts)
-
     
     prompt = f"""
     Sen 'Kovanova Studios' adlı bir YouTube kanalı için içerik üreten profesyonel ve gerçeğe sadık bir astrologsun.
@@ -46,9 +45,11 @@ def generate_zodiac_script(zodiac_sign="Koç"):
     3. Videonun başında (burç adını söyledikten hemen sonra) güçlü bir kanca (hook) olsun. Sonunda ise kapanış cümlesi olarak SADECE şu cümleyi kullan: "Kader çarkı senin için dönsün." (Abone ol vs. deme).
     4. Seslendirme robotu okuyacağı için metinde (gülümser), [müzik girer] gibi hiçbir sahne notu OLMASIN.
     5. KESİNLİKLE UNUTMA: Okunacak video metni (script) tamamen TÜRKÇE olmalıdır. Ancak video üretimi için olan 'video_prompts' kısmı İNGİLİZCE olmalıdır.
-    6. Bu videonun arka planında dönecek, burcun elementine, bugünkü ruh haline ve 'Rastgele Odak Konsepti'ne uygun, yüksek kaliteli AI video üreticisi için TAM 5 ADET detaylı İngilizce 'video prompt' yaz. 
-       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun sembolünün veya mitolojik temsilinin çok belirgin ve havalı bir portresi olmalıdır. (Örn: Boğa ise boynuzlu bir varlık veya boğa, Koç ise koç boynuzlu savaşçı vs.) Ancak bu görseli 'Rastgele Odak Konsepti'yle harmanlayarak (örn. konsept 'Mistik Orman' ise ormanda, 'Kozmik Uzay' ise uzayda) her videoda FARKLI ve EŞSİZ bir versiyonunu yarat! İlk görsel tamamen burcu tanıtmaya odaklı olsun!
-       - Diğer 4 prompt da konuyla çok yakından bağlantılı ancak birbirinden kesinlikle farklı, çeşitli sahneler (yakın çekimler, uzak çekimler, farklı açılar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden karizmatik, gizemli figürler (kadın/erkek) veya simgeler içerebilir.
+    6. Bu videonun arka planında dönecek, burcun elementine, bugünkü ruh haline ve 'Rastgele Odak Konsepti'ne uygun, yüksek kaliteli AI görsel üreticisi için TAM 7 ADET detaylı İngilizce 'video prompt' yaz. 
+       - ÇOK ÖNEMLİ KURAL: Asla gerçek, vahşi veya korkunç hayvan fotoğrafları (örn. belgesel gibi gerçek bir aslan, korkunç bir yengeç vs.) İSTEME! Zodyak sembollerini mistik, astrolojik, renkli ve sanatsal bir şekilde temsil et. Yüz ve vücut anatomisinin kusursuz (perfect anatomy, well-proportioned) olması gerektiğini belirt ki deforme görseller oluşmasın. Korkutucu veya ürkütücü (creepy) hiçbir öğe kullanma.
+       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun astrolojik sembolünün veya mistik-insansı temsilinin çok estetik, simetrik ve sanatsal bir portresi olmalıdır. Ancak bu görseli 'Rastgele Odak Konsepti'yle harmanlayarak her videoda FARKLI ve EŞSİZ bir versiyonunu yarat! İlk görsel tamamen burcu tanıtmaya odaklı olsun!
+       - Diğer 6 prompt da konuyla çok yakından bağlantılı ancak birbirinden kesinlikle farklı, çeşitli astrolojik sahneler (yakın çekimler, takımyıldızlar, büyüleyici burç figürleri, kozmik manzaralar, sembolik objeler, eterik auralar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden estetik, renkli ve gizemli semboller veya büyüleyici insan figürleri (kadın/erkek) içerebilir.
+       - Her 7 görselin kendine özgü bir sanat stili olmalı: portre, manzara+figür, yakın çekim obje, kozmik sahne, sembolik illüstrasyon, büyüleyici figür, soyut astrolojik kompozisyon gibi.
        - Her seferinde görseller BİRBİRİNDEN VE DAHA ÖNCEKİLERDEN TAMAMEN FARKLI ve ÇEŞİTLİ OLSUN!
     
     Çıktını SADECE aşağıdaki JSON formatında ver, başka hiçbir açıklama ekleme:
@@ -59,7 +60,9 @@ def generate_zodiac_script(zodiac_sign="Koç"):
             "İngilizce video prompt 2",
             "İngilizce video prompt 3",
             "İngilizce video prompt 4",
-            "İngilizce video prompt 5"
+            "İngilizce video prompt 5",
+            "İngilizce video prompt 6",
+            "İngilizce video prompt 7"
         ]
     }}
     """
