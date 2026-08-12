@@ -57,7 +57,7 @@ def create_video():
     if text_content:
         # Metni 4-5 kelimelik parçalara bölüyoruz
         words = text_content.split()
-        chunk_size = 4
+        chunk_size = 3
         chunks = [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
         
         duration_per_chunk = total_duration / len(chunks)
@@ -68,12 +68,9 @@ def create_video():
             # TextClip için ImageMagick kurulu olmalıdır!
             try:
                 font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Roboto-Bold.ttf')
-                txt_clip = TextClip(text=chunk, font_size=70, color='white', font=font_path,
-                                    stroke_color='black', stroke_width=3, size=(900, None), method='caption')
-                txt_clip = txt_clip.with_position(('center', 'bottom')).with_start(start_time).with_duration(duration_per_chunk)
-                
-                # Hafif yukarı kaydırmak için margin
-                txt_clip = txt_clip.margin(bottom=200, opacity=0)
+                txt_clip = TextClip(text=chunk, font_size=55, color='white', font=font_path,
+                                    stroke_color='black', stroke_width=3, size=(950, None), method='caption')
+                txt_clip = txt_clip.with_position(('center', 1500)).with_start(start_time).with_duration(duration_per_chunk)
                 txt_clips.append(txt_clip)
             except Exception as e:
                 print(f"Altyazı üretilirken hata oluştu (ImageMagick eksik olabilir): {e}")
