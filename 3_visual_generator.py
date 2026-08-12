@@ -28,23 +28,32 @@ def generate_images(prompts, output_dir="images"):
         encoded_prompt = urllib.parse.quote(enhanced_prompt)
         
         max_retries = 5
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+        ]
+        
         for attempt in range(max_retries):
             seed = random.randint(1, 99999999)
             url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1080&height=1920&nologo=true&seed={seed}"
             output_path = os.path.join(output_dir, f"image_{i+1}.jpg")
             try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=30) as response, open(output_path, 'wb') as out_file:
+                headers = {'User-Agent': random.choice(user_agents), 'Accept': 'image/jpeg'}
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=45) as response, open(output_path, 'wb') as out_file:
                     out_file.write(response.read())
                 print(f"Gorsel {i+1} basariyla kaydedildi: {output_path}")
-                time.sleep(5) # Bekleme süresi ekle
+                time.sleep(10) # Bekleme süresini uzattık
                 break # Başarılı olursa döngüden çık
             except urllib.error.HTTPError as e:
                 print(f"Gorsel {i+1} uretilirken HTTP hatası (Deneme {attempt+1}/{max_retries}): {e}")
-                time.sleep(10)
+                time.sleep(15)
             except Exception as e:
                 print(f"Gorsel {i+1} uretilirken hata (Deneme {attempt+1}/{max_retries}): {e}")
-                time.sleep(10)
+                time.sleep(15)
 
 def main():
     try:

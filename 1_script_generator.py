@@ -31,19 +31,24 @@ def generate_zodiac_script(zodiac_sign="Koç"):
     
     Görevlerin:
     1. LÜTFEN SALLAMA YAPMA. Bugünün ({bugun}) GERÇEK astrolojik olaylarını, gezegen geçişlerini (transitler, retro veya ay konumu vb.) dikkate alarak bu burç için özel bir yorum yap. 
-    2. Bu burç hakkında, 20-30 saniyede okunabilecek (yaklaşık 50-70 kelime) kısa, gizemli ve ilgi çekici bir metin yaz.
-    3. Videonun başında güçlü bir kanca (hook) olsun. Sonunda ise kapanış cümlesi olarak SADECE şu cümleyi kullan: "Kader çarkı senin için dönsün." (Abone ol vs. deme).
+    2. Okunacak metin KESİNLİKLE şu kelimelerle başlamalıdır: '{zodiac_sign} burcu, ...' veya doğrudan '{zodiac_sign}, ...'. Böylece videonun başında hangi burçtan bahsedildiği seyirciye anında iletilmiş olsun. Sonrasında 20-30 saniyede okunabilecek (yaklaşık 50-70 kelime) kısa, gizemli ve ilgi çekici bir metin yaz.
+    3. Videonun başında (burç adını söyledikten hemen sonra) güçlü bir kanca (hook) olsun. Sonunda ise kapanış cümlesi olarak SADECE şu cümleyi kullan: "Kader çarkı senin için dönsün." (Abone ol vs. deme).
     4. Seslendirme robotu okuyacağı için metinde (gülümser), [müzik girer] gibi hiçbir sahne notu OLMASIN.
     5. KESİNLİKLE UNUTMA: Okunacak video metni (script) tamamen TÜRKÇE olmalıdır. Ancak video üretimi için olan 'video_prompts' kısmı İNGİLİZCE olmalıdır.
-    6. Bu videonun arka planında dönecek, burcun elementine ve bugünkü ruh haline uygun, yüksek kaliteli AI video üreticisi için TAM 5 ADET detaylı İngilizce 'video prompt' yaz. KESİNLİKLE DİKKAT ET: Bu görseller sadece manzara veya obje OLMAMALIDIR. Her görsel mutlaka o burcu temsil eden karizmatik, gizemli KADIN veya ERKEK figürleri (portre veya belden yukarı) içermelidir (Örneğin koç burcu için boynuzları olan ateşli bir savaşçı kadın, mistik kıyafetler vb). (Örnek prompt: "Cinematic 4k portrait of a beautiful mystical woman with golden ram horns, glowing fiery aura, dark fantasy aesthetic, intricate gold details")
-    
+    6. Bu videonun arka planında dönecek, burcun elementine ve bugünkü ruh haline uygun, yüksek kaliteli AI video üreticisi için TAM 5 ADET detaylı İngilizce 'video prompt' yaz. 
+       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun sembolünün veya mitolojik temsilinin çok belirgin ve havalı bir portresi olmalıdır. (Örn: Boğa ise boynuzlu bir varlık veya boğa, Koç ise koç boynuzlu savaşçı vs.) İlk görsel tamamen burcu tanıtmaya odaklı olsun!
+       - Diğer 4 prompt da konuyla çok yakından bağlantılı ancak birbirinden farklı, çeşitli sahneler (yakın çekimler, uzak çekimler, farklı açılar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden karizmatik, gizemli figürler (kadın/erkek) içerebilir.
+       - (Örnek prompt: "Cinematic 4k portrait of a beautiful mystical woman with golden ram horns representing Aries, glowing fiery aura, dark fantasy aesthetic, intricate gold details")
     
     Çıktını SADECE aşağıdaki JSON formatında ver, başka hiçbir açıklama ekleme:
     {{
         "script": "Burada okunacak Türkçe metin olacak.",
         "video_prompts": [
             "İngilizce video prompt 1",
-            "İngilizce video prompt 2"
+            "İngilizce video prompt 2",
+            "İngilizce video prompt 3",
+            "İngilizce video prompt 4",
+            "İngilizce video prompt 5"
         ]
     }}
     """

@@ -1,7 +1,52 @@
 import os
 import json
 import glob
-from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
+
+def create_text_image(text, width=950, height=300, font_path='Roboto-Bold.ttf', font_size=55):
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype(font_path, font_size)
+    except Exception as e:
+        print(f"Font yüklenemedi: {e}")
+        font = ImageFont.load_default()
+    
+    # Word wrap
+    words = text.split()
+    lines = []
+    current_line = []
+    for word in words:
+        current_line.append(word)
+        # Bounding box for current line
+        left, top, right, bottom = draw.textbbox((0, 0), ' '.join(current_line), font=font)
+        if (right - left) > width - 40:
+            current_line.pop()
+            lines.append(' '.join(current_line))
+            current_line = [word]
+    if current_line:
+        lines.append(' '.join(current_line))
+        
+    # Draw centered text
+    y_text = 10
+    stroke_width = 3
+    for line in lines:
+        left, top, right, bottom = draw.textbbox((0, 0), line, font=font)
+        line_width = right - left
+        x_text = (width - line_width) / 2
+        
+        # Stroke
+        for dx in range(-stroke_width, stroke_width+1):
+            for dy in range(-stroke_width, stroke_width+1):
+                draw.text((x_text+dx, y_text+dy), line, font=font, fill='black')
+                
+        # Main text
+        draw.text((x_text, y_text), line, font=font, fill='white')
+        y_text += (bottom - top) + 15
+        
+    return np.array(img)
 
 def create_video():
     print("Video Montajlayıcı (MoviePy) başlatılıyor...")
@@ -62,18 +107,20 @@ def create_video():
         
         duration_per_chunk = total_duration / len(chunks)
         
+        font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Roboto-Bold.ttf')
+        
         txt_clips = []
         for i, chunk in enumerate(chunks):
             start_time = i * duration_per_chunk
-            # TextClip için ImageMagick kurulu olmalıdır!
             try:
-                font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Roboto-Bold.ttf')
-                txt_clip = TextClip(text=chunk, font_size=55, color='white', font=font_path,
-                                    stroke_color='black', stroke_width=3, size=(950, None), method='caption')
-                txt_clip = txt_clip.with_position(('center', 1500)).with_start(start_time).with_duration(duration_per_chunk)
+                # Pillow ile numpy array oluştur
+                text_array = create_text_image(chunk, width=950, height=350, font_path=font_path, font_size=55)
+                # Numpy array'den ImageClip oluştur
+                txt_clip = ImageClip(text_array)
+                txt_clip = txt_clip.with_position(('center', 1150)).with_start(start_time).with_duration(duration_per_chunk)
                 txt_clips.append(txt_clip)
             except Exception as e:
-                print(f"Altyazı üretilirken hata oluştu (ImageMagick eksik olabilir): {e}")
+                print(f"Altyazı üretilirken hata oluştu: {e}")
                 txt_clips = []
                 break
                 
