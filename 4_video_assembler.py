@@ -67,7 +67,8 @@ def create_video():
             start_time = i * duration_per_chunk
             # TextClip için ImageMagick kurulu olmalıdır!
             try:
-                txt_clip = TextClip(text=chunk, font_size=70, color='white', font='Arial-Bold',
+                font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Roboto-Bold.ttf')
+                txt_clip = TextClip(text=chunk, font_size=70, color='white', font=font_path,
                                     stroke_color='black', stroke_width=3, size=(900, None), method='caption')
                 txt_clip = txt_clip.with_position(('center', 'bottom')).with_start(start_time).with_duration(duration_per_chunk)
                 
