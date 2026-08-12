@@ -21,24 +21,35 @@ def generate_zodiac_script(zodiac_sign="Koç"):
     """
     
     import datetime
+    import random
     bugun = datetime.datetime.now().strftime("%d %B %Y")
+    
+    concepts = [
+        "Mistik Orman ve Toprak Büyüsü", "Kozmik Uzay ve Yıldız Tozu", "Gölge ve Işık Kontrastı (Film Noir)", 
+        "Antik Tapınak ve Altın Dokunuşlar", "Karanlık Fantezi ve Neon Renkler", "Kristal Mağara ve Büyülü Aura", 
+        "Siberpunk Astroloji ve Hologramlar", "Gotik Estetik ve Kırmızı Güller", "Rönesans Tablosu Tarzı",
+        "Su Altı Dünyası ve İnciler", "Çöl Kumları ve Güneş Tutulması", "Buzul Krallığı ve Mavi Alevler"
+    ]
+    random_concept = random.choice(concepts)
+
     
     prompt = f"""
     Sen 'Kovanova Studios' adlı bir YouTube kanalı için içerik üreten profesyonel ve gerçeğe sadık bir astrologsun.
     Konseptimiz: Gerçek Astroloji ve Burçlar.
     Bugünün tarihi: {bugun}
     Bugünün burcu: {zodiac_sign}.
+    Rastgele Odak Konsepti (bu videoyu diğerlerinden farklılaştırmak için): {random_concept}
     
     Görevlerin:
-    1. LÜTFEN SALLAMA YAPMA. Bugünün ({bugun}) GERÇEK astrolojik olaylarını, gezegen geçişlerini (transitler, retro veya ay konumu vb.) dikkate alarak bu burç için özel bir yorum yap. 
+    1. LÜTFEN SALLAMA YAPMA. Bugünün ({bugun}) GERÇEK astrolojik olaylarını, gezegen geçişlerini (transitler, retro veya ay konumu vb.) dikkate alarak bu burç için özel bir yorum yap. Belirtilen 'Rastgele Odak Konsepti'ni hafifçe yoruma yedir.
     2. Okunacak metin KESİNLİKLE şu kelimelerle başlamalıdır: '{zodiac_sign} burcu, ...' veya doğrudan '{zodiac_sign}, ...'. Böylece videonun başında hangi burçtan bahsedildiği seyirciye anında iletilmiş olsun. Sonrasında 20-30 saniyede okunabilecek (yaklaşık 50-70 kelime) kısa, gizemli ve ilgi çekici bir metin yaz.
     3. Videonun başında (burç adını söyledikten hemen sonra) güçlü bir kanca (hook) olsun. Sonunda ise kapanış cümlesi olarak SADECE şu cümleyi kullan: "Kader çarkı senin için dönsün." (Abone ol vs. deme).
     4. Seslendirme robotu okuyacağı için metinde (gülümser), [müzik girer] gibi hiçbir sahne notu OLMASIN.
     5. KESİNLİKLE UNUTMA: Okunacak video metni (script) tamamen TÜRKÇE olmalıdır. Ancak video üretimi için olan 'video_prompts' kısmı İNGİLİZCE olmalıdır.
-    6. Bu videonun arka planında dönecek, burcun elementine ve bugünkü ruh haline uygun, yüksek kaliteli AI video üreticisi için TAM 5 ADET detaylı İngilizce 'video prompt' yaz. 
-       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun sembolünün veya mitolojik temsilinin çok belirgin ve havalı bir portresi olmalıdır. (Örn: Boğa ise boynuzlu bir varlık veya boğa, Koç ise koç boynuzlu savaşçı vs.) İlk görsel tamamen burcu tanıtmaya odaklı olsun!
-       - Diğer 4 prompt da konuyla çok yakından bağlantılı ancak birbirinden farklı, çeşitli sahneler (yakın çekimler, uzak çekimler, farklı açılar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden karizmatik, gizemli figürler (kadın/erkek) içerebilir.
-       - (Örnek prompt: "Cinematic 4k portrait of a beautiful mystical woman with golden ram horns representing Aries, glowing fiery aura, dark fantasy aesthetic, intricate gold details")
+    6. Bu videonun arka planında dönecek, burcun elementine, bugünkü ruh haline ve 'Rastgele Odak Konsepti'ne uygun, yüksek kaliteli AI video üreticisi için TAM 5 ADET detaylı İngilizce 'video prompt' yaz. 
+       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun sembolünün veya mitolojik temsilinin çok belirgin ve havalı bir portresi olmalıdır. (Örn: Boğa ise boynuzlu bir varlık veya boğa, Koç ise koç boynuzlu savaşçı vs.) Ancak bu görseli 'Rastgele Odak Konsepti'yle harmanlayarak (örn. konsept 'Mistik Orman' ise ormanda, 'Kozmik Uzay' ise uzayda) her videoda FARKLI ve EŞSİZ bir versiyonunu yarat! İlk görsel tamamen burcu tanıtmaya odaklı olsun!
+       - Diğer 4 prompt da konuyla çok yakından bağlantılı ancak birbirinden kesinlikle farklı, çeşitli sahneler (yakın çekimler, uzak çekimler, farklı açılar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden karizmatik, gizemli figürler (kadın/erkek) veya simgeler içerebilir.
+       - Her seferinde görseller BİRBİRİNDEN VE DAHA ÖNCEKİLERDEN TAMAMEN FARKLI ve ÇEŞİTLİ OLSUN!
     
     Çıktını SADECE aşağıdaki JSON formatında ver, başka hiçbir açıklama ekleme:
     {{
@@ -77,8 +88,13 @@ def generate_zodiac_script(zodiac_sign="Koç"):
 
 if __name__ == "__main__":
     import random
+    import datetime
+    
     zodiac_signs = ["Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak", "Kova", "Balık"]
-    selected_sign = random.choice(zodiac_signs)
+    
+    # Her gün aynı burcu seçmek için bugünün tarihine göre indeks belirliyoruz
+    day_index = datetime.datetime.now().toordinal() % 12
+    selected_sign = zodiac_signs[day_index]
     
     print(f"Senaryo üretiliyor... (Seçilen Burç: {selected_sign})")
     result = generate_zodiac_script(selected_sign)
