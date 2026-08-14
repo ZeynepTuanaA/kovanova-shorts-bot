@@ -39,20 +39,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_python_exec():
     """Çalıştırma ortamına göre doğru Python çalıştırıcısını bulur."""
-    if os.path.exists(sys.executable):
-        # Windows venv yolu Linux'ta geçersizdir (.venv/Scripts/python.exe -> .venv/bin/python)
-        if os.name == 'posix' and sys.executable.endswith('python.exe'):
-            alt = sys.executable.replace('\\', '/').replace('Scripts/python.exe', 'bin/python').replace('Scripts/python', 'bin/python')
-            if os.path.exists(alt):
-                return alt
-        else:
-            return sys.executable
-
-    # Linux / Container üzerindeki olası Python yolları
-    for p in ['/opt/venv/bin/python', '/app/.venv/bin/python', '/usr/bin/python3', 'python3', 'python']:
-        if os.path.exists(p) or shutil.which(p):
-            return p
-            
     return sys.executable
 
 PYTHON_EXEC = get_python_exec()
