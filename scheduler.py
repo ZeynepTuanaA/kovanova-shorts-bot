@@ -39,9 +39,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_python_exec():
     """Çalıştırma ortamına göre doğru Python çalıştırıcısını bulur."""
-    if os.name == 'nt':
-        return sys.executable
-    return 'python'
+    return sys.executable
 
 PYTHON_EXEC = get_python_exec()
 print(f"[+] Kullanılan Python Yolu: {PYTHON_EXEC}")

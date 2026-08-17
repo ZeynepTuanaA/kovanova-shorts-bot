@@ -5,7 +5,6 @@ import random
 import whisper
 import whisper.audio
 import imageio_ffmpeg
-from google.cloud import texttospeech
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -17,19 +16,29 @@ def monkeypatch_run(cmd, *args, **kwargs):
     return original_run(cmd, *args, **kwargs)
 whisper.audio.run = monkeypatch_run
 
-async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_file="subtitles.json"):
+async def generate_speech_edge_tts(text, output_file):
     """
-    Verilen metni Google Cloud TTS (Wavenet) ile sese dönüştürür.
-    Ardından Local Whisper AI (small model) kullanarak kelime bazlı zaman damgalarını çıkarır.
+    Microsoft Edge TTS (Ücretsiz, limitsiz ve yüksek kaliteli Türkçe nöral sesler)
     """
-    # 1. Ses Üretimi (Google Cloud TTS)
+    import edge_tts
+    voices = ["tr-TR-AhmetNeural", "tr-TR-EmelNeural"]
+    selected_voice = random.choice(voices)
+    print(f"Edge TTS (Ücretsiz & Doğal Türkçe Nöral Ses) kullanılarak ses üretiliyor... (Ses: {selected_voice})")
+    communicate = edge_tts.Communicate(text, selected_voice)
+    await communicate.save(output_file)
+    print(f"Seslendirme '{output_file}' dosyasına başarıyla kaydedildi!")
+
+def generate_speech_google_tts(text, output_file):
+    """
+    Fallback: Google Cloud TTS
+    """
+    from google.cloud import texttospeech
     credentials_path = "google-credentials.json"
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
     
-    # Kullanıcının seçtiği Wavenet sesleri
     voices = ["tr-TR-Wavenet-C", "tr-TR-Wavenet-D"]
     selected_voice = random.choice(voices)
-    print(f"Google Cloud TTS kullanılarak ses üretiliyor... (Ses: {selected_voice})")
+    print(f"Google Cloud TTS fallback kullanılarak ses üretiliyor... (Ses: {selected_voice})")
     
     client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -39,16 +48,26 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
     response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
     with open(output_file, "wb") as out:
         out.write(response.audio_content)
-    
-    print(f"Seslendirme '{output_file}' dosyasına başarıyla kaydedildi!")
+    print(f"Seslendirme (Google) '{output_file}' dosyasına kaydedildi!")
+
+async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_file="subtitles.json"):
+    """
+    Metni sese dönüştürür ve Whisper AI ile kelime bazlı zaman damgalarını çıkarır.
+    """
+    # 1. Ses Üretimi (Öncelikli Edge-TTS ücretsiz, hata olursa Google fallback)
+    try:
+        await generate_speech_edge_tts(text, output_file)
+    except Exception as e:
+        print(f"Edge TTS uyarısı: {e}. Google Cloud TTS deneniyor...")
+        if os.path.exists("google-credentials.json"):
+            generate_speech_google_tts(text, output_file)
+        else:
+            raise e
 
     # 2. Whisper ile Kelime Zaman Damgalarını Alma
-    print("Local Whisper AI (base model) yükleniyor ve ses analiz ediliyor... (Hızlı ve Kaliteli İşlem İçin)")
-    
+    print("Local Whisper AI (base model) yükleniyor ve ses analiz ediliyor...")
     model = whisper.load_model('base')
     
-    # Türkçe astroloji terimleri ve yaygın kelimeleri içeren zengin initial_prompt
-    # Bu, Whisper'ın Türkçe kelime tanıma doğruluğunu önemli ölçüde artırır
     turkish_context = (
         "Bu video bir Türkçe YouTube short astroloji videosudur. "
         "Kelimeler doğru Türkçe yazımla yazılmalıdır. "
@@ -63,7 +82,6 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
     print("Zaman damgaları çıkarılıyor...")
     result = model.transcribe(output_file, word_timestamps=True, language='tr', fp16=False, initial_prompt=turkish_context)
         
-    # Whisper'ın Türkçe'de sıkça yaptığı yanlış yazımları düzelten sözlük
     turkish_corrections = {
         "gölkemli": "görkemli",
         "görgelerin": "gölgelerin",
@@ -85,12 +103,10 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
     }
     
     def correct_turkish(word):
-        """Whisper'ın Türkçe hatalarını düzeltir."""
         cleaned = word.strip()
         lower = cleaned.lower()
         for wrong, right in turkish_corrections.items():
             if lower == wrong.lower():
-                # Orijinal kelimeden boşluk prefix'ini koru
                 prefix = word[:len(word) - len(word.lstrip())]
                 return prefix + right
         return word
@@ -109,7 +125,6 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
         json.dump(subtitles, f, ensure_ascii=False, indent=2)
         
     print(f"Toplam {len(subtitles)} kelimenin zaman damgası '{subtitles_file}' dosyasına başarıyla kaydedildi!")
-    print("(Türkçe düzeltme katmanı uygulandı)")
 
 def main():
     script_file = "current_script.json"
