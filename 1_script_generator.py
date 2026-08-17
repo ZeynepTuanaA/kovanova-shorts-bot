@@ -1,68 +1,63 @@
 import os
 import json
+import re
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
-
 if not api_key:
-    raise ValueError("GEMINI_API_KEY bulunamadı! Lütfen .env dosyasına ekleyin.")
+    raise ValueError("GEMINI_API_KEY bulunamadı!")
 
 client = genai.Client(api_key=api_key)
 
-def generate_zodiac_script(zodiac_sign="Koç"):
+def generate_zodiac_script(zodiac_sign="Kova"):
     """
     Belirtilen burç hakkında 20-30 saniyelik (50-70 kelime) bir YouTube Shorts metni 
-    ve arka plan videosu (Veo 3) için görsel promptları üretir.
+    ve arka plan videosu için 7 adet ASİL, KUSURSUZ YÜZLÜ, ŞIK VE KAPALI KIYAFETLİ astrolojik görsel promptu üretir.
     """
-    
     import datetime
     import random
     bugun = datetime.datetime.now().strftime("%d %B %Y")
     
-    concepts = [
-        "Mistik Astroloji ve Yıldız Haritaları", "Kozmik Galaksi ve Nebula", "Tarot Kartı Estetiği", 
-        "Altın Oran ve Kutsal Geometri", "Rüya Alemi ve Pastel Tonlar", "Sulu Boya Astrolojik Figürler", 
-        "Zodyak Çarkı ve Kozmik Işıklar", "Eterik Aura ve Parlayan Takımyıldızlar", "Rönesans Astrolojisi",
-        "Kristal Astroloji ve Şifa Enerjisi", "Güneş Tutulması ve Kozmik Kapı", "Masalsı Gökyüzü ve Burç Sembolleri"
-    ]
-    random_concept = random.choice(concepts)
-    
     prompt = f"""
-    Sen 'Kovanova Studios' adlı bir YouTube kanalı için içerik üreten profesyonel ve gerçeğe sadık bir astrologsun.
-    Konseptimiz: Gerçek Astroloji ve Burçlar.
-    Bugünün tarihi: {bugun}
-    Bugünün burcu: {zodiac_sign}.
-    Rastgele Odak Konsepti (bu videoyu diğerlerinden farklılaştırmak için): {random_concept}
+    Sen 'Kovanova Studios' YouTube kanalı için içerik üreten saygın ve vizyoner bir astrologsun.
+    Konsept: Gerçek Astroloji, Zodyak ve Kozmik Enerjiler.
+    Tarih: {bugun}
+    Burç: {zodiac_sign}.
     
-    Görevlerin:
-    1. LÜTFEN SALLAMA YAPMA. Bugünün ({bugun}) GERÇEK astrolojik olaylarını, gezegen geçişlerini (transitler, retro veya ay konumu vb.) dikkate alarak bu burç için özel bir yorum yap. Belirtilen 'Rastgele Odak Konsepti'ni hafifçe yoruma yedir.
-    2. Okunacak metin KESİNLİKLE şu kelimelerle başlamalıdır: '{zodiac_sign} burcu, ...' veya doğrudan '{zodiac_sign}, ...'. Böylece videonun başında hangi burçtan bahsedildiği seyirciye anında iletilmiş olsun. Sonrasında 20-30 saniyede okunabilecek (yaklaşık 50-70 kelime) kısa, gizemli ve ilgi çekici bir metin yaz.
-    3. Videonun başında (burç adını söyledikten hemen sonra) güçlü bir kanca (hook) olsun. Sonunda ise kapanış cümlesi olarak SADECE şu cümleyi kullan: "Kader çarkı senin için dönsün." (Abone ol vs. deme).
-    4. Seslendirme robotu okuyacağı için metinde (gülümser), [müzik girer] gibi hiçbir sahne notu OLMASIN.
-    5. KESİNLİKLE UNUTMA: Okunacak video metni (script) tamamen TÜRKÇE olmalıdır. Ancak video üretimi için olan 'video_prompts' kısmı İNGİLİZCE olmalıdır.
-    6. Bu videonun arka planında dönecek, burcun elementine, bugünkü ruh haline ve 'Rastgele Odak Konsepti'ne uygun, yüksek kaliteli AI görsel üreticisi için TAM 7 ADET detaylı İngilizce 'video prompt' yaz. 
-       - ÇOK ÖNEMLİ KURAL: Asla gerçek, vahşi veya korkunç hayvan fotoğrafları (örn. belgesel gibi gerçek bir aslan, korkunç bir yengeç vs.) İSTEME! Zodyak sembollerini mistik, astrolojik, renkli ve sanatsal bir şekilde temsil et. Yüz ve vücut anatomisinin kusursuz (perfect anatomy, well-proportioned) olması gerektiğini belirt ki deforme görseller oluşmasın. Korkutucu veya ürkütücü (creepy) hiçbir öğe kullanma. KESİNLİKLE çıplaklık veya müstehcen içerik OLMAMALI! Tüm figürler tamamen giyinik (fully clothed, elegant dress/attire) ve her yaşa uygun (SFW, no nudity) tasvir edilmelidir.
-       - İLK (1.) prompt KESİNLİKLE doğrudan {zodiac_sign} burcunun astrolojik sembolünün veya mistik-insansı temsilinin çok estetik, simetrik ve sanatsal bir portresi olmalıdır. Ancak bu görseli 'Rastgele Odak Konsepti'yle harmanlayarak her videoda FARKLI ve EŞSİZ bir versiyonunu yarat! İlk görsel tamamen burcu tanıtmaya odaklı olsun!
-       - Diğer 6 prompt da konuyla çok yakından bağlantılı ancak birbirinden kesinlikle farklı, çeşitli astrolojik sahneler (yakın çekimler, takımyıldızlar, büyüleyici burç figürleri, kozmik manzaralar, sembolik objeler, eterik auralar) içermelidir. Sadece manzara OLMAMALIDIR. Her görsel o burcu temsil eden estetik, renkli ve gizemli semboller veya büyüleyici insan figürleri (kadın/erkek) içerebilir.
-       - Her 7 görselin kendine özgü bir sanat stili olmalı: portre, manzara+figür, yakın çekim obje, kozmik sahne, sembolik illüstrasyon, büyüleyici figür, soyut astrolojik kompozisyon gibi.
-       - Her seferinde görseller BİRBİRİNDEN VE DAHA ÖNCEKİLERDEN TAMAMEN FARKLI ve ÇEŞİTLİ OLSUN!
+    GÖREVLER:
+    1. {zodiac_sign} burcu için bugünün astrolojik enerjilerini anlatan 50-70 kelimelik gizemli, akıcı ve motive edici bir Türkçe metin yaz.
+    2. Metin KESİNLİKLE '{zodiac_sign} burcu, ...' veya '{zodiac_sign}, ...' ile başlamalıdır.
+    3. Kapanış cümlesi SADECE şu olmalıdır: "Kader çarkı senin için dönsün."
+    4. Metinde sahne notu ([müzik] vb.) olmasın.
+    5. Video için TAM 7 ADET İngilizce 'video_prompts' yaz.
+       - GÖRSEL KALİTE VE KARAKTER KURALLARI:
+         * Karakterler ve insanlar İÇERSİN. Ancak yüz ve göz anatomisi KUSURSUZ, simetrik ve fotogerçekçi (perfect symmetrical face, photorealistic eyes, detailed facial features) olmalıdır. Asla deforme, kayık veya korkunç yüzler olmasın.
+         * KIYAFETLER: Kesinlikle asil, şık, dökümlü ve KAPALI olmalıdır (fully clothed in royal celestial velvet robes, majestic high-fashion hooded cloaks, ornate gold embroidery, elegant modest attire). Asla dekolte, çıplaklık veya vücut hatlarını öne çıkaran müstehcen tasvirler OLMAMALIDIR.
+         * TEMATİK UYUM: Her görsel doğrudan {zodiac_sign} burcunun astrolojik teması, Zodyak elementleri, altın Zodyak sembolleri, kadim haritalar ve kozmik galaksiyle iç içe olmalıdır.
+         * 1. Görsel: {zodiac_sign} burcunu temsil eden asil, kusursuz yüzlü bir figürün görkemli portresi (altın taç, kraliyet cübbesi, parlayan Zodyak amblemi).
+         * 2. Görsel: Gökyüzündeki Güneş ve gezegen hizalanmasına bakan asil pelerinli figür.
+         * 3. Görsel: Altın astrolab ve yıldız haritası tutan zarif bir astrolog portresi.
+         * 4. Görsel: {zodiac_sign} takımyıldızının ışıltısı altında duran görkemli cübbeli bilge.
+         * 5. Görsel: Kozmik kristal portala odaklanan asil bir figür.
+         * 6. Görsel: Nebula ve Zodyak çarkı önünde duran estetik figür.
+         * 7. Görsel: Dönen altın Kader Çarkı ve kozmik ışıklar içindeki görkemli figür.
+         * Her promptun sonuna ekle: "masterpiece, photorealistic digital art, perfect facial symmetry, detailed eyes, fully clothed in elegant royal attire, cinematic lighting, 8k resolution, vertical 9:16 aspect ratio".
     
-    Çıktını SADECE aşağıdaki JSON formatında ver, başka hiçbir açıklama ekleme:
+    Çıktını SADECE JSON formatında ver:
     {{
-        "script": "Burada okunacak Türkçe metin olacak.",
+        "script": "Türkçe metin",
         "video_prompts": [
-            "İngilizce video prompt 1",
-            "İngilizce video prompt 2",
-            "İngilizce video prompt 3",
-            "İngilizce video prompt 4",
-            "İngilizce video prompt 5",
-            "İngilizce video prompt 6",
-            "İngilizce video prompt 7"
+            "İngilizce prompt 1",
+            "İngilizce prompt 2",
+            "İngilizce prompt 3",
+            "İngilizce prompt 4",
+            "İngilizce prompt 5",
+            "İngilizce prompt 6",
+            "İngilizce prompt 7"
         ]
     }}
     """
@@ -75,39 +70,41 @@ def generate_zodiac_script(zodiac_sign="Koç"):
         ),
     )
     
-    try:
-        raw_text = response.text.strip()
-        if raw_text.startswith("```json"):
-            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-        if not raw_text.endswith("}"):
-            raw_text += "}"
+    raw_text = response.text.strip()
+    if raw_text.startswith("```json"):
+        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+        
+    start = raw_text.find("{")
+    end = raw_text.rfind("}")
+    if start != -1 and end != -1:
+        try:
+            return json.loads(raw_text[start:end+1])
+        except Exception:
+            pass
             
-        data = json.loads(raw_text)
-        return data
+    try:
+        return json.loads(raw_text)
     except Exception as e:
-        print(f"JSON parse hatası: {e}! API'den gelen yanıt:")
-        print(response.text)
+        print(f"JSON regex fallback...")
+        script_m = re.search(r'"script"\s*:\s*"([^"]+)"', raw_text)
+        script = script_m.group(1) if script_m else ""
+        prompts = re.findall(r'"([^"]{30,})"', raw_text)
+        valid_prompts = [p for p in prompts if p != script and "video_prompts" not in p]
+        if script and valid_prompts:
+            return {"script": script, "video_prompts": valid_prompts[:7]}
         return None
 
 if __name__ == "__main__":
-    import random
     import datetime
-    
     zodiac_signs = ["Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak", "Kova", "Balık"]
-    
-    # Her gün aynı burcu seçmek için bugünün tarihine göre indeks belirliyoruz
     day_index = datetime.datetime.now().toordinal() % 12
     selected_sign = zodiac_signs[day_index]
     
-    print(f"Senaryo üretiliyor... (Seçilen Burç: {selected_sign})")
+    print(f"Senaryo ve Asil Karakter Promptları Üretiliyor... (Burç: {selected_sign})")
     result = generate_zodiac_script(selected_sign)
     
     if result:
         with open("current_script.json", "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=4)
-        
-        print("Senaryo ve promptlar 'current_script.json' dosyasına başarıyla kaydedildi!")
-        print("-" * 30)
+        print("Senaryo ve promptlar 'current_script.json' dosyasına kaydedildi!")
         print(f"SCRIPT:\n{result.get('script')}")
-        print(f"\nPROMPTS:\n{result.get('video_prompts')}")
-        print("-" * 30)
