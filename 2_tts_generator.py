@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import random
+import re
 import whisper
 import whisper.audio
 import imageio_ffmpeg
@@ -16,15 +17,24 @@ def monkeypatch_run(cmd, *args, **kwargs):
     return original_run(cmd, *args, **kwargs)
 whisper.audio.run = monkeypatch_run
 
-async def generate_speech_edge_tts(text, output_file):
+async def generate_speech_edge_tts(text, output_file, voice="tr-TR-AhmetNeural", rate="-12%", pitch="+0Hz"):
     """
-    Microsoft Edge TTS (Ücretsiz, limitsiz ve yüksek kaliteli Türkçe nöral sesler)
+    Microsoft Edge TTS — Doğal, sakin ve etkileyici Türkçe anlatıcı sesi.
+    - rate: '-12%' ile hızlı ve robotik ton engellenir, tane tane akıcı konuşur.
     """
     import edge_tts
-    voices = ["tr-TR-AhmetNeural", "tr-TR-EmelNeural"]
-    selected_voice = random.choice(voices)
-    print(f"Edge TTS (Ücretsiz & Doğal Türkçe Nöral Ses) kullanılarak ses üretiliyor... (Ses: {selected_voice})")
-    communicate = edge_tts.Communicate(text, selected_voice)
+    
+    # Metni akıcı okuma için hafifçe normalize et
+    # Çoklu boşlukları temizle
+    clean_text = re.sub(r'\s+', ' ', text).strip()
+    
+    print(f"Edge TTS (Doğal Türkçe Nöral Ses: {voice}, Hız: {rate}) kullanılarak ses üretiliyor...")
+    communicate = edge_tts.Communicate(
+        text=clean_text,
+        voice=voice,
+        rate=rate,
+        pitch=pitch
+    )
     await communicate.save(output_file)
     print(f"Seslendirme '{output_file}' dosyasına başarıyla kaydedildi!")
 
@@ -43,20 +53,20 @@ def generate_speech_google_tts(text, output_file):
     client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=text)
     voice = texttospeech.VoiceSelectionParams(language_code="tr-TR", name=selected_voice)
-    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=0.90)
     
     response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
     with open(output_file, "wb") as out:
         out.write(response.audio_content)
     print(f"Seslendirme (Google) '{output_file}' dosyasına kaydedildi!")
 
-async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_file="subtitles.json"):
+async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_file="subtitles.json", voice="tr-TR-AhmetNeural"):
     """
     Metni sese dönüştürür ve Whisper AI ile kelime bazlı zaman damgalarını çıkarır.
     """
-    # 1. Ses Üretimi (Öncelikli Edge-TTS ücretsiz, hata olursa Google fallback)
+    # 1. Ses Üretimi (Öncelikli Edge-TTS ücretsiz, doğal ve yavaşlatılmış tempo)
     try:
-        await generate_speech_edge_tts(text, output_file)
+        await generate_speech_edge_tts(text, output_file, voice=voice, rate="-10%", pitch="+0Hz")
     except Exception as e:
         print(f"Edge TTS uyarısı: {e}. Google Cloud TTS deneniyor...")
         if os.path.exists("google-credentials.json"):
@@ -65,7 +75,7 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
             raise e
 
     # 2. Whisper ile Kelime Zaman Damgalarını Alma
-    print("Local Whisper AI (base model) yükleniyor ve ses analiz ediliyor...")
+    print("Local Whisper AI yükleniyor ve ses analiz ediliyor...")
     model = whisper.load_model('base')
     
     turkish_context = (
@@ -100,6 +110,8 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
         "gökyüzunde": "gökyüzünde",
         "sahneleniyo": "sahneleniyor",
         "birleşiyo": "birleşiyor",
+        "tualdeki": "tuvaldeki",
+        "hava": "Kova",
     }
     
     def correct_turkish(word):
@@ -117,8 +129,8 @@ async def generate_audio_and_subtitles(text, output_file="audio.mp3", subtitles_
             corrected_word = correct_turkish(w['word'])
             subtitles.append({
                 "word": corrected_word,
-                "start": w['start'],
-                "end": w['end']
+                "start": round(w['start'], 3),
+                "end": round(w['end'], 3)
             })
             
     with open(subtitles_file, "w", encoding="utf-8") as f:
@@ -140,7 +152,8 @@ def main():
         print("Hata: JSON dosyasında 'script' metni bulunamadı.")
         return
         
-    asyncio.run(generate_audio_and_subtitles(script_text))
+    # Astroloji için karizmatik derin ses AhmetNeural
+    asyncio.run(generate_audio_and_subtitles(script_text, voice="tr-TR-AhmetNeural"))
 
 if __name__ == "__main__":
     main()
