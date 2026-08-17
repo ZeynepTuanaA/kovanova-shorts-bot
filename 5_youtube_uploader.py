@@ -1,5 +1,9 @@
 import os
+import json
+import sys
 import datetime
+
+sys.stdout.reconfigure(encoding='utf-8')
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -11,11 +15,9 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 def get_authenticated_service():
     creds = None
-    # Token dosyası daha önce alınmış erişim belirteçlerini saklar
     if os.path.exists("youtube_token.json"):
         creds = Credentials.from_authorized_user_file("youtube_token.json", SCOPES)
         
-    # Eğer geçerli bir kimlik bilgisi yoksa kullanıcıya giriş yaptır
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             print("Süresi dolmuş token yenileniyor...")
@@ -23,15 +25,10 @@ def get_authenticated_service():
         else:
             print("Tarayıcı açılarak YouTube izni alınacak...")
             if not os.path.exists("client_secrets.json"):
-                raise FileNotFoundError(
-                    "HATA: 'client_secrets.json' dosyası bulunamadı!\n"
-                    "Google Cloud Console üzerinden YouTube Data API v3 yetkili bir OAuth 2.0 İstemci Kimliği indirip "
-                    "Kovanova_Shorts klasörüne 'client_secrets.json' olarak kaydetmelisiniz."
-                )
+                raise FileNotFoundError("HATA: 'client_secrets.json' dosyası bulunamadı!")
             flow = InstalledAppFlow.from_client_secrets_file("client_secrets.json", SCOPES)
             creds = flow.run_local_server(port=0)
             
-        # Sonraki kullanımlar için token'ı kaydet
         with open("youtube_token.json", "w") as token_file:
             token_file.write(creds.to_json())
 
@@ -42,37 +39,45 @@ def upload_video():
     youtube = get_authenticated_service()
 
     file_path = "final_short.mp4"
-    
     if not os.path.exists(file_path):
         print(f"HATA: Yüklenecek video bulunamadı: {file_path}")
         return
 
-    # Güncel tarih (Örn: 24 Ekim)
-    today = datetime.datetime.now()
-    date_str = f"{today.day} {today.strftime('%B')}"
-    
-    # Şimdilik varsayılan başlık ve açıklama. İleride script_generator'dan da çekilebilir.
-    title = f"Günün Astroloji Mesajı ✨ Kader Çarkı Senin İçin Dönsün! #astroloji #shorts"
+    # Scriptten burç adını al
+    sign_name = "Kova"
+    if os.path.exists("current_script.json"):
+        try:
+            with open("current_script.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                script = data.get("script", "")
+                for s in ["Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak", "Kova", "Balık"]:
+                    if s.lower() in script.lower()[:30]:
+                        sign_name = s
+                        break
+        except Exception:
+            pass
+
+    title = f"{sign_name} Burcu İçin Kozmik Mesaj ✨ Kader Çarkı Senin İçin Dönsün! #shorts #astroloji"
     description = (
-        "Günlük gizemli astroloji mesajınız.\n\n"
-        "Abone olmayı unutmayın!\n\n"
-        "#astroloji #burçlar #gizem #shorts #keşfet"
+        f"{sign_name} burcu için bugünün astroloji mesajı ve kozmik rehberliği.\n\n"
+        "Kader çarkı senin için dönsün! ✨\n\n"
+        f"#astroloji #{sign_name.lower()}burcu #burçlar #gizem #shorts #keşfet"
     )
 
     body = {
         "snippet": {
             "title": title,
             "description": description,
-            "tags": ["astroloji", "burçlar", "shorts", "gizem", "koç burcu", "aslan burcu", "yay burcu"],
+            "tags": ["astroloji", "burçlar", "shorts", "gizem", f"{sign_name.lower()} burcu", "kova burcu", "günlük burç"],
             "categoryId": "24" # Entertainment
         },
         "status": {
-            "privacyStatus": "public", # Test başarılı olduğu için artık Public yüklüyoruz.
+            "privacyStatus": "public",
             "selfDeclaredMadeForKids": False
         }
     }
 
-    print(f"'{title}' başlıklı video yükleniyor...")
+    print(f"'{title}' başlıklı video YouTube'a yükleniyor...")
     media = MediaFileUpload(file_path, chunksize=-1, resumable=True, mimetype="video/mp4")
 
     request = youtube.videos().insert(
@@ -82,10 +87,11 @@ def upload_video():
     )
 
     response = request.execute()
-    
     video_id = response.get("id")
+    video_url = f"https://youtube.com/shorts/{video_id}"
     print(f"✅ Video başarıyla yüklendi!")
-    print(f"🔗 Video Linki: https://youtube.com/shorts/{video_id}")
+    print(f"🔗 Video Linki: {video_url}")
+    return video_url
 
 if __name__ == "__main__":
     upload_video()
