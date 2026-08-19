@@ -72,13 +72,26 @@ def generate_zodiac_script(zodiac_sign="Kova"):
     }}
     """
     
-    response = client.models.generate_content(
-        model='gemini-3.5-flash',
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-        ),
-    )
+    candidate_models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+    response = None
+    last_err = None
+    for model_name in candidate_models:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                ),
+            )
+            if response and response.text:
+                break
+        except Exception as e:
+            last_err = e
+            print(f"Model '{model_name}' denendi, hata: {e}. Diğer modele geçiliyor...")
+            
+    if not response or not response.text:
+        raise RuntimeError(f"Tüm Gemini modelleri başarısız oldu: {last_err}")
     
     raw_text = response.text.strip()
     if raw_text.startswith("```json"):
