@@ -72,26 +72,55 @@ def generate_zodiac_script(zodiac_sign="Kova"):
     }}
     """
     
-    candidate_models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+    import time
+    candidate_models = ['gemini-3.5-flash', 'gemini-3.6-flash']
     response = None
     last_err = None
+    
     for model_name in candidate_models:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                ),
-            )
-            if response and response.text:
-                break
-        except Exception as e:
-            last_err = e
-            print(f"Model '{model_name}' denendi, hata: {e}. Diğer modele geçiliyor...")
+        for attempt in range(1, 4):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                if response and response.text:
+                    break
+            except Exception as e:
+                last_err = e
+                print(f"Model '{model_name}' deneme {attempt} başarısız: {e}")
+                time.sleep(2 * attempt)
+        if response and response.text:
+            break
             
     if not response or not response.text:
-        raise RuntimeError(f"Tüm Gemini modelleri başarısız oldu: {last_err}")
+        print(f"Uyarı: Gemini modelleri geçici olarak meşgul ({last_err}). Şablon senaryo devreye sokuluyor...")
+        return {
+            "zodiac_sign": zodiac_sign,
+            "theme": "Kozmik Dönüşüm ve Enerji",
+            "script": f"{zodiac_sign} burcu, bugün kozmik enerjiler ruhunu sarıyor. Yıldızlar sezgilerinin sana rehberlik edeceğini müjdeliyor. İçindeki saklı gücü keşfetmek için harika bir gün. İnancını koru, yola devam et. Kader çarkı senin için dönsün.",
+            "pexels_queries": [
+                f"{zodiac_sign.lower()} zodiac celestial aesthetic",
+                f"{zodiac_sign.lower()} galaxy stars cosmic",
+                "celestial space nebulae gold glow",
+                "mystical universe spiritual stars",
+                "cosmic wheel destiny tarot",
+                "glowing galaxy magic universe",
+                "celestial zodiac royalty"
+            ],
+            "video_prompts": [
+                f"Dark fantasy {zodiac_sign} zodiac spirit, detailed cinematic 8k, 9:16 vertical",
+                f"Mystical {zodiac_sign} goddess standing in cosmos, ethereal lighting, 9:16 vertical",
+                f"Celestial priestess channeling {zodiac_sign} energy, intricate stars, 9:16 vertical",
+                f"Majestic royal figure embodying {zodiac_sign} constellation, 9:16 vertical",
+                f"Cosmic warrior with glowing {zodiac_sign} aura in deep space, 9:16 vertical",
+                f"Ethereal queen of destiny, golden galaxy background, 9:16 vertical",
+                f"Sacred cosmic shrine of {zodiac_sign}, starry night sky, 9:16 vertical"
+            ]
+        }
     
     raw_text = response.text.strip()
     if raw_text.startswith("```json"):
