@@ -43,17 +43,23 @@ def upload_video():
         print(f"HATA: Yüklenecek video bulunamadı: {file_path}")
         return
 
-    # Scriptten burç adını al
+    # Scriptten burç adını ve Pexels attribution bilgisini al
     sign_name = "Kova"
+    attribution_text = ""
     if os.path.exists("current_script.json"):
         try:
             with open("current_script.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
+                sign_name = data.get("zodiac_sign", sign_name)
                 script = data.get("script", "")
                 for s in ["Koç", "Boğa", "İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak", "Kova", "Balık"]:
                     if s.lower() in script.lower()[:30]:
                         sign_name = s
                         break
+                # Pexels attribution
+                enable_attr = os.getenv("ENABLE_PEXELS_ATTRIBUTION", "true").lower() in ("true", "1", "yes")
+                if enable_attr:
+                    attribution_text = data.get("attribution_text", "")
         except Exception:
             pass
 
@@ -63,6 +69,8 @@ def upload_video():
         "Kader çarkı senin için dönsün! ✨\n\n"
         f"#astroloji #{sign_name.lower()}burcu #burçlar #gizem #shorts #keşfet"
     )
+    if attribution_text:
+        description += f"\n{attribution_text}"
 
     body = {
         "snippet": {

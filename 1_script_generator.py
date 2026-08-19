@@ -33,31 +33,41 @@ def generate_zodiac_script(zodiac_sign="Kova"):
     2. Metin KESİNLİKLE '{zodiac_sign} burcu, ...' veya '{zodiac_sign}, ...' ile başlamalıdır.
     3. Kapanış cümlesi SADECE şu olmalıdır: "Kader çarkı senin için dönsün."
     4. Metinde sahne notu ([müzik] vb.) olmasın.
-    5. Video için TAM 7 ADET İngilizce 'video_prompts' yaz.
-       - GÖRSEL KALİTE VE KARAKTER KURALLARI:
-         * Karakterler ve insanlar İÇERSİN. Ancak yüz ve göz anatomisi KUSURSUZ, simetrik ve fotogerçekçi (perfect symmetrical face, photorealistic eyes, detailed facial features) olmalıdır. Asla deforme, kayık veya korkunç yüzler olmasın.
-         * KIYAFETLER: Kesinlikle asil, şık, dökümlü ve KAPALI olmalıdır (fully clothed in royal celestial velvet robes, majestic high-fashion hooded cloaks, ornate gold embroidery, elegant modest attire). Asla dekolte, çıplaklık veya vücut hatlarını öne çıkaran müstehcen tasvirler OLMAMALIDIR.
-         * TEMATİK UYUM: Her görsel doğrudan {zodiac_sign} burcunun astrolojik teması, Zodyak elementleri, altın Zodyak sembolleri, kadim haritalar ve kozmik galaksiyle iç içe olmalıdır.
-         * 1. Görsel: {zodiac_sign} burcunu temsil eden asil, kusursuz yüzlü bir figürün görkemli portresi (altın taç, kraliyet cübbesi, parlayan Zodyak amblemi).
-         * 2. Görsel: Gökyüzündeki Güneş ve gezegen hizalanmasına bakan asil pelerinli figür.
-         * 3. Görsel: Altın astrolab ve yıldız haritası tutan zarif bir astrolog portresi.
-         * 4. Görsel: {zodiac_sign} takımyıldızının ışıltısı altında duran görkemli cübbeli bilge.
-         * 5. Görsel: Kozmik kristal portala odaklanan asil bir figür.
-         * 6. Görsel: Nebula ve Zodyak çarkı önünde duran estetik figür.
-         * 7. Görsel: Dönen altın Kader Çarkı ve kozmik ışıklar içindeki görkemli figür.
-         * Her promptun sonuna ekle: "masterpiece, photorealistic digital art, perfect facial symmetry, detailed eyes, fully clothed in elegant royal attire, cinematic lighting, 8k resolution, vertical 9:16 aspect ratio".
+    5. Metnin ana konusunu ve temalarını analiz et (Örneğin: Aşk, Para/Kariyer, Enerji/Dönüşüm, Spiritüel Şans).
+    6. Video görselleri için Pexels API'de dikey arama yapmaya uygun TAM 7 ADET dinamik İngilizce arama sorgusu ('pexels_queries') oluştur.
+       - Aşk teması için: "romantic celestial astrology", "pink galaxy stars", "love astrology aesthetic"
+       - Para / Başarı için: "luxury celestial gold", "golden stars universe", "wealth aesthetic cosmic"
+       - Enerji / Dönüşüm için: "cosmic transformation eclipse", "mystical aura light", "spiritual energy galaxy"
+       - Burç teması için: "{zodiac_sign.lower()} zodiac celestial", "cosmic night stars aesthetic", "celestial mystery"
+    7. AI görsel üretimi için 7 adet İngilizce 'video_prompts' oluştur:
+       - Estetik: Dark fantasy, mystical, cinematic fantasy concept art, digital painting, highly detailed, dramatic lighting.
+       - Karakter odaklı: {zodiac_sign} burcunun sembolik öğelerini üzerinde taşıyan asil, tamamen giyinik, büyüleyici fantezi karakteri (kadın/tanrıça/savaşçı).
+       - NSFW/Açıklık/Müstehcenlik KESİNLİKLE YOKTUR.
+       - Renkler: Derin lacivert, mor, altın, zümrüt veya burcun mistik tonları.
+       - Dikey kompozisyon (vertical 9:16 portrait).
     
     Çıktını SADECE JSON formatında ver:
     {{
+        "zodiac_sign": "{zodiac_sign}",
+        "theme": "Aşk / Para / Enerji / Dönüşüm",
         "script": "Türkçe metin",
+        "pexels_queries": [
+            "İngilizce pexels arama sorgusu 1",
+            "İngilizce pexels arama sorgusu 2",
+            "İngilizce pexels arama sorgusu 3",
+            "İngilizce pexels arama sorgusu 4",
+            "İngilizce pexels arama sorgusu 5",
+            "İngilizce pexels arama sorgusu 6",
+            "İngilizce pexels arama sorgusu 7"
+        ],
         "video_prompts": [
-            "İngilizce prompt 1",
-            "İngilizce prompt 2",
-            "İngilizce prompt 3",
-            "İngilizce prompt 4",
-            "İngilizce prompt 5",
-            "İngilizce prompt 6",
-            "İngilizce prompt 7"
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 1, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 2, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 3, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 4, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 5, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 6, 9:16 vertical",
+            "Dark fantasy {zodiac_sign} zodiac character, detailed prompt 7, 9:16 vertical"
         ]
     }}
     """
@@ -90,8 +100,19 @@ def generate_zodiac_script(zodiac_sign="Kova"):
         script = script_m.group(1) if script_m else ""
         prompts = re.findall(r'"([^"]{30,})"', raw_text)
         valid_prompts = [p for p in prompts if p != script and "video_prompts" not in p]
+        default_queries = [
+            f"{zodiac_sign.lower()} celestial astrology aesthetic",
+            f"{zodiac_sign.lower()} zodiac cosmic night",
+            "romantic celestial pink galaxy",
+            "luxury celestial gold universe",
+            "cosmic transformation eclipse mystical",
+            "galaxy stars universe spiritual",
+            "celestial astrology mystery night"
+        ]
         if script and valid_prompts:
-            return {"script": script, "video_prompts": valid_prompts[:7]}
+            return {"zodiac_sign": zodiac_sign, "theme": "Kozmik Astroloji", "script": script, "pexels_queries": default_queries, "video_prompts": valid_prompts[:7]}
+        elif script:
+            return {"zodiac_sign": zodiac_sign, "theme": "Kozmik Astroloji", "script": script, "pexels_queries": default_queries, "video_prompts": []}
         return None
 
 if __name__ == "__main__":

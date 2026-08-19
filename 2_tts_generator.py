@@ -17,56 +17,65 @@ def monkeypatch_run(cmd, *args, **kwargs):
     return original_run(cmd, *args, **kwargs)
 whisper.audio.run = monkeypatch_run
 
-async def generate_speech_edge_tts(text, output_file, voice="tr-TR-AhmetNeural", rate="-10%", pitch="+0Hz"):
+from tts_provider import get_tts_provider, TextPreprocessor
+
+def generate_speech_fish_audio(text, output_file="audio.mp3", reference_id=None):
     """
-    Microsoft Edge TTS — Doğal, sakin ve etkileyici Türkçe anlatıcı sesi.
+    Fish Audio S2.1 Pro — Yüksek Kaliteli Türkçe TTS Sağlayıcısı.
     """
-    import edge_tts
-    clean_text = re.sub(r'\s+', ' ', text).strip()
-    
-    print(f"Edge TTS (Doğal Türkçe Nöral Ses: {voice}, Hız: {rate}) kullanılarak ses üretiliyor...")
-    communicate = edge_tts.Communicate(
-        text=clean_text,
-        voice=voice,
-        rate=rate,
-        pitch=pitch
+    provider = get_tts_provider()
+    metadata = provider.generate_speech(
+        text=text,
+        output_path=output_file,
+        reference_id=reference_id,
+        audio_format="mp3"
     )
-    await communicate.save(output_file)
-    print(f"Seslendirme '{output_file}' dosyasına başarıyla kaydedildi!")
+    # Metadata dosyasını kaydet
+    meta_path = "audio_metadata.json"
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    return metadata
 
 def generate_speech_google_tts(text, output_file):
-    """Fallback: Google Cloud TTS"""
-    from google.cloud import texttospeech
+    """Acil Durum Fallback: Google Cloud TTS (varsa)"""
     credentials_path = "google-credentials.json"
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-    
-    voices = ["tr-TR-Wavenet-C", "tr-TR-Wavenet-D"]
-    selected_voice = random.choice(voices)
-    print(f"Google Cloud TTS fallback kullanılarak ses üretiliyor... (Ses: {selected_voice})")
-    
-    client = texttospeech.TextToSpeechClient()
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    voice = texttospeech.VoiceSelectionParams(language_code="tr-TR", name=selected_voice)
-    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=0.90)
-    
-    response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
-    with open(output_file, "wb") as out:
-        out.write(response.audio_content)
-    print(f"Seslendirme (Google) '{output_file}' dosyasına kaydedildi!")
-
-async def generate_audio_and_subtitles(script_text, output_file="audio.mp3", subtitles_file="subtitles.json", voice="tr-TR-AhmetNeural"):
-    """
-    Metni sese dönüştürür ve Whisper AI zaman damgalarını ORİJİNAL senaryo kelimeleriyle birebir eşleştirir.
-    Böylece altyazıda %0 hata, kusursuz Türkçe imla ve mükemmel zamanlama sağlanır!
-    """
-    # 1. Ses Üretimi
+    if not os.path.exists(credentials_path):
+        return False
     try:
-        await generate_speech_edge_tts(script_text, output_file, voice=voice, rate="-10%", pitch="+0Hz")
+        from google.cloud import texttospeech
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+        
+        voices = ["tr-TR-Wavenet-C", "tr-TR-Wavenet-D"]
+        selected_voice = random.choice(voices)
+        print(f"Google Cloud TTS fallback kullanılarak ses üretiliyor... (Ses: {selected_voice})")
+        
+        client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(language_code="tr-TR", name=selected_voice)
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=0.90)
+        
+        response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+        with open(output_file, "wb") as out:
+            out.write(response.audio_content)
+        print(f"Seslendirme (Google) '{output_file}' dosyasına kaydedildi!")
+        return True
     except Exception as e:
-        print(f"Edge TTS uyarısı: {e}. Google Cloud TTS deneniyor...")
-        if os.path.exists("google-credentials.json"):
-            generate_speech_google_tts(script_text, output_file)
-        else:
+        print(f"Google TTS fallback hatası: {e}")
+        return False
+
+async def generate_audio_and_subtitles(script_text, output_file="audio.mp3", subtitles_file="subtitles.json", reference_id=None):
+    """
+    Metni Fish Audio S2.1 Pro ile seslendirir ve Whisper AI zaman damgalarını 
+    ORİJİNAL senaryo kelimeleriyle birebir eşleştirir.
+    """
+    # 1. Ses Üretimi (Ana Sağlayıcı: Fish Audio S2.1 Pro)
+    try:
+        print(f"Fish Audio S2.1 Pro TTS ile Türkçe ses üretiliyor...")
+        generate_speech_fish_audio(script_text, output_file, reference_id=reference_id)
+    except Exception as e:
+        print(f"Fish Audio TTS uyarısı: {e}. Fallback kontrol ediliyor...")
+        ok = generate_speech_google_tts(script_text, output_file)
+        if not ok:
             raise e
 
     # 2. Whisper ile Kelime Zaman Damgalarını Alma
@@ -145,7 +154,7 @@ def main():
         print("Hata: JSON dosyasında 'script' metni bulunamadı.")
         return
         
-    asyncio.run(generate_audio_and_subtitles(script_text, voice="tr-TR-AhmetNeural"))
+    asyncio.run(generate_audio_and_subtitles(script_text, reference_id=os.getenv("FISH_REFERENCE_ID")))
 
 if __name__ == "__main__":
     main()

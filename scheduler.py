@@ -4,7 +4,6 @@ import subprocess
 import os
 import sys
 import base64
-import shutil
 
 # Türkiye Saati (UTC+3) Ayarı
 os.environ['TZ'] = 'Europe/Istanbul'
@@ -13,6 +12,9 @@ if hasattr(time, 'tzset'):
         time.tzset()
     except Exception:
         pass
+
+# Sistemin kurulduğu dizin (Kovanova_Shorts klasörü)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def initialize_secrets():
     # Railway'den gelen Base64 şifreleri dosyalara dönüştür (eğer varsa)
@@ -25,7 +27,8 @@ def initialize_secrets():
         b64_content = os.environ.get(env_var)
         if b64_content:
             try:
-                with open(filename, "wb") as f:
+                target_path = os.path.join(BASE_DIR, filename)
+                with open(target_path, "wb") as f:
                     f.write(base64.b64decode(b64_content))
                 print(f"[+] {filename} oluşturuldu.")
             except Exception as e:
@@ -33,9 +36,6 @@ def initialize_secrets():
 
 # İlk başta secret'ları başlat
 initialize_secrets()
-
-# Sistemin kurulduğu dizin (Kovanova_Shorts klasörü)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_python_exec():
     """Çalıştırma ortamına göre doğru Python çalıştırıcısını bulur."""
@@ -66,7 +66,7 @@ def run_step(script_name):
 def job_create_and_upload():
     """Tüm üretim bandını sırasıyla çalıştırır."""
     print(f"\n=======================================================")
-    print(f"🚀 YENİ VİDEO ÜRETİM VE YÜKLEME DÖNGÜSÜ BAŞLADI!")
+    print(f"🚀 YENİ VİDEO ÜRETİM VE YÜKLEME DÖNGÜSÜ BAŞLADI! [{time.strftime('%Y-%m-%d %H:%M:%S %Z')}]")
     print(f"=======================================================\n")
     
     steps = [
@@ -84,7 +84,7 @@ def job_create_and_upload():
             return # Hata varsa sonraki adımlara geçme
             
     print(f"\n=======================================================")
-    print(f"✅ GÖREV TAMAMLANDI! YENİ VİDEO YOUTUBE'A YÜKLENDİ.")
+    print(f"✅ GÖREV TAMAMLANDI! YENİ VİDEO YOUTUBE'A YÜKLENDİ. [{time.strftime('%Y-%m-%d %H:%M:%S %Z')}]")
     print(f"=======================================================\n")
 
 def main():
@@ -92,20 +92,23 @@ def main():
     print("Sistem arka planda bekliyor...")
     
     # -------------------------------------------------------------------
-    # SAATLERİ BURADAN DEĞİŞTİREBİLİRSİNİZ (Türkiye Saati: 10:00, 15:00, 20:00)
+    # SAATLER (Türkiye Saati / UTC+3): 10:00, 15:00, 20:00 + Test Saatleri
     # -------------------------------------------------------------------
     schedule.every().day.at("10:00").do(job_create_and_upload)
     schedule.every().day.at("15:00").do(job_create_and_upload)
     schedule.every().day.at("20:00").do(job_create_and_upload)
+    schedule.every().day.at("20:20").do(job_create_and_upload)
+    schedule.every().day.at("20:25").do(job_create_and_upload)
     
-    print("Ayarlanan saatler (Türkiye Saati): 10:00, 15:00, 20:00")
+    print("Ayarlanan saatler (Türkiye Saati): 10:00, 15:00, 20:00 (Test: 20:20, 20:25)")
     print(f"Şu anki sistem zamanı: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     print("Kapatmak için CTRL+C tuşlarına basabilirsiniz.\n")
 
-    # Bekleme döngüsü
+    # Bekleme döngüsü (30 sn aralıkla kontrol)
     while True:
         schedule.run_pending()
-        time.sleep(60) # Her 60 saniyede bir saati kontrol et
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()
+
