@@ -1,17 +1,12 @@
-import schedule
-import time
-import subprocess
 import os
 import sys
+import time
 import base64
+import subprocess
+from datetime import datetime, timezone, timedelta
 
-# Türkiye Saati (UTC+3) Ayarı
-os.environ['TZ'] = 'Europe/Istanbul'
-if hasattr(time, 'tzset'):
-    try:
-        time.tzset()
-    except Exception:
-        pass
+# Türkiye Saati (UTC+3) Sabit Zaman Dilimi
+TR_TZ = timezone(timedelta(hours=3))
 
 # Sistemin kurulduğu dizin (Kovanova_Shorts klasörü)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,36 +32,33 @@ def initialize_secrets():
 # İlk başta secret'ları başlat
 initialize_secrets()
 
-def get_python_exec():
-    """Çalıştırma ortamına göre doğru Python çalıştırıcısını bulur."""
-    return sys.executable
-
-PYTHON_EXEC = get_python_exec()
+PYTHON_EXEC = sys.executable
 print(f"[+] Kullanılan Python Yolu: {PYTHON_EXEC}")
 
 def run_step(script_name):
     """Belirtilen Python betiğini çalıştırır ve sonucunu döner."""
-    print(f"\n[{time.strftime('%H:%M:%S')}] BAŞLIYOR: {script_name}...")
+    now_str = datetime.now(TR_TZ).strftime('%H:%M:%S')
+    print(f"\n[{now_str}] BAŞLIYOR: {script_name}...")
     
     script_path = os.path.join(BASE_DIR, script_name)
     
     try:
         # Alt işlemi çalıştır
         result = subprocess.run([PYTHON_EXEC, script_path], cwd=BASE_DIR, check=True, text=True)
-        print(f"[{time.strftime('%H:%M:%S')}] BAŞARILI: {script_name} tamamlandı.")
+        print(f"[{datetime.now(TR_TZ).strftime('%H:%M:%S')}] BAŞARILI: {script_name} tamamlandı.")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"[{time.strftime('%H:%M:%S')}] HATA: {script_name} çalışırken hata verdi!")
-        print(f"Hata kodu: {e.returncode}")
+        print(f"[{datetime.now(TR_TZ).strftime('%H:%M:%S')}] HATA: {script_name} çalışırken hata verdi (Kod: {e.returncode})")
         return False
     except Exception as e:
-        print(f"[{time.strftime('%H:%M:%S')}] BEKLENMEYEN HATA: {script_name} - {e}")
+        print(f"[{datetime.now(TR_TZ).strftime('%H:%M:%S')}] BEKLENMEYEN HATA: {script_name} - {e}")
         return False
 
 def job_create_and_upload():
     """Tüm üretim bandını sırasıyla çalıştırır."""
+    now_str = datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')
     print(f"\n=======================================================")
-    print(f"🚀 YENİ VİDEO ÜRETİM VE YÜKLEME DÖNGÜSÜ BAŞLADI! [{time.strftime('%Y-%m-%d %H:%M:%S %Z')}]")
+    print(f"🚀 YENİ VİDEO ÜRETİM VE YÜKLEME DÖNGÜSÜ BAŞLADI! [TSİ: {now_str}]")
     print(f"=======================================================\n")
     
     steps = [
@@ -84,31 +76,33 @@ def job_create_and_upload():
             return # Hata varsa sonraki adımlara geçme
             
     print(f"\n=======================================================")
-    print(f"✅ GÖREV TAMAMLANDI! YENİ VİDEO YOUTUBE'A YÜKLENDİ. [{time.strftime('%Y-%m-%d %H:%M:%S %Z')}]")
+    print(f"✅ GÖREV TAMAMLANDI! YENİ VİDEO YOUTUBE'A YÜKLENDİ. [TSİ: {datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}]")
     print(f"=======================================================\n")
 
 def main():
-    print("Kovanova Studios Otomatik Zamanlayıcı Başlatıldı!")
-    print("Sistem arka planda bekliyor...")
-    
     # -------------------------------------------------------------------
     # SAATLER (Türkiye Saati / UTC+3): 10:00, 15:00, 20:00 + Test Saatleri
     # -------------------------------------------------------------------
-    schedule.every().day.at("10:00").do(job_create_and_upload)
-    schedule.every().day.at("15:00").do(job_create_and_upload)
-    schedule.every().day.at("20:00").do(job_create_and_upload)
-    schedule.every().day.at("20:20").do(job_create_and_upload)
-    schedule.every().day.at("20:25").do(job_create_and_upload)
+    TARGET_TIMES = ["10:00", "15:00", "20:00", "20:25", "20:28", "20:30"]
     
-    print("Ayarlanan saatler (Türkiye Saati): 10:00, 15:00, 20:00 (Test: 20:20, 20:25)")
-    print(f"Şu anki sistem zamanı: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    print("Kapatmak için CTRL+C tuşlarına basabilirsiniz.\n")
-
-    # Bekleme döngüsü (30 sn aralıkla kontrol)
+    print("=" * 60)
+    print("🌟 Kovanova Studios Otomatik Zamanlayıcı Başlatıldı!")
+    print(f"⏰ Ayarlanan Görev Saatleri (Türkiye Saati): {', '.join(TARGET_TIMES)}")
+    print(f"🕒 Başlangıç Türkiye Zamanı: {datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
+    
+    last_executed_minute = None
+    
     while True:
-        schedule.run_pending()
-        time.sleep(30)
+        now = datetime.now(TR_TZ)
+        current_time_str = now.strftime("%H:%M")
+        
+        if current_time_str in TARGET_TIMES and current_time_str != last_executed_minute:
+            last_executed_minute = current_time_str
+            print(f"\n⏰ [TETİKLENDİ] Hedef saat {current_time_str} geldi, video üretim süreci başlatılıyor...")
+            job_create_and_upload()
+            
+        time.sleep(5)
 
 if __name__ == "__main__":
     main()
-
