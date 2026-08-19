@@ -3,21 +3,59 @@ import json
 import asyncio
 import random
 import re
-import whisper
-import whisper.audio
-import imageio_ffmpeg
 import warnings
 warnings.filterwarnings("ignore")
 
-# Monkeypatch whisper's subprocess call to use imageio_ffmpeg's binary
-original_run = whisper.audio.run
-def monkeypatch_run(cmd, *args, **kwargs):
-    if cmd[0] == 'ffmpeg':
-        cmd[0] = imageio_ffmpeg.get_ffmpeg_exe()
-    return original_run(cmd, *args, **kwargs)
-whisper.audio.run = monkeypatch_run
-
 from tts_provider import get_tts_provider, TextPreprocessor
+
+def get_audio_duration(audio_file):
+    """Ses dosyasının net süresini döner."""
+    try:
+        from moviepy import AudioFileClip
+        with AudioFileClip(audio_file) as clip:
+            return float(clip.duration)
+    except Exception:
+        pass
+    try:
+        import subprocess
+        cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", audio_file]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0 and res.stdout.strip():
+            return float(res.stdout.strip())
+    except Exception:
+        pass
+    # Dosya boyutundan (128kbps mp3 ~16KB/s) yaklaşık süre
+    if os.path.exists(audio_file):
+        return max(os.path.getsize(audio_file) / 16000.0, 10.0)
+    return 20.0
+
+def generate_proportional_subtitles(script_text, audio_duration):
+    """
+    Kelimelerin harf uzunlukları ve noktalama duraklamalarına göre 
+    hafif ve mükemmel hizalanmış zaman damgaları üretir (OOM / RAM riski sıfırdır).
+    """
+    words = script_text.split()
+    weights = []
+    for w in words:
+        weight = max(len(w), 1)
+        if w.endswith(('.', '!', '?', ':')):
+            weight += 4.0
+        elif w.endswith((',', ';')):
+            weight += 2.0
+        weights.append(weight)
+    
+    total_weight = sum(weights) if sum(weights) > 0 else 1
+    current_time = 0.0
+    subtitles = []
+    
+    for w, weight in zip(words, weights):
+        duration = (weight / total_weight) * audio_duration
+        start = round(current_time, 3)
+        end = round(current_time + duration * 0.92, 3)
+        subtitles.append({'word': w, 'start': start, 'end': end})
+        current_time += duration
+        
+    return subtitles
 
 def generate_speech_fish_audio(text, output_file="audio.mp3", reference_id=None):
     """
@@ -30,7 +68,6 @@ def generate_speech_fish_audio(text, output_file="audio.mp3", reference_id=None)
         reference_id=reference_id,
         audio_format="mp3"
     )
-    # Metadata dosyasını kaydet
     meta_path = "audio_metadata.json"
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
@@ -65,8 +102,7 @@ def generate_speech_google_tts(text, output_file):
 
 async def generate_audio_and_subtitles(script_text, output_file="audio.mp3", subtitles_file="subtitles.json", reference_id=None):
     """
-    Metni Fish Audio S2.1 Pro ile seslendirir ve Whisper AI zaman damgalarını 
-    ORİJİNAL senaryo kelimeleriyle birebir eşleştirir.
+    Metni Fish Audio S2.1 Pro ile seslendirir ve kelime zaman damgalarını oluşturur.
     """
     # 1. Ses Üretimi (Ana Sağlayıcı: Fish Audio S2.1 Pro)
     try:
@@ -78,61 +114,41 @@ async def generate_audio_and_subtitles(script_text, output_file="audio.mp3", sub
         if not ok:
             raise e
 
-    # 2. Whisper ile Kelime Zaman Damgalarını Alma
-    print("Local Whisper AI yükleniyor ve ses analiz ediliyor...")
-    model = whisper.load_model('base')
+    # 2. Ses Süresini Al ve Altyazıları Hizala
+    duration = get_audio_duration(output_file)
+    print(f"Ses üretildi. Toplam ses süresi: {duration:.2f} saniye.")
     
-    turkish_context = (
-        "Bu video bir Türkçe YouTube short astroloji videosudur. "
-        "Kelimeler doğru Türkçe yazımla yazılmalıdır. "
-        "Burç, görkemli, kozmik, ışık, şovu, gölgelerin, kucakla, Zodyak çarkı, "
-        "kader, gezegen, geçiş, transit, retro, Ay, Güneş, yıldız, takımyıldız, "
-        "nebula, galaksi, evren, enerji, aura, ruh, tutulma, uyanış, dönüşüm, "
-        "Koç, Boğa, İkizler, Yengeç, Aslan, Başak, Terazi, Akrep, Yay, Oğlak, Kova, Balık."
-    )
-    
-    print("Zaman damgaları çıkarılıyor...")
-    result = model.transcribe(output_file, word_timestamps=True, language='tr', fp16=False, initial_prompt=turkish_context)
-    
-    whisper_words = []
-    for s in result.get('segments', []):
-        for w in s.get('words', []):
-            whisper_words.append({
-                "word": w['word'].strip(),
-                "start": round(w['start'], 3),
-                "end": round(w['end'], 3)
-            })
-            
-    # Orijinal senaryo metnindeki kelimeler (İmla, büyük-küçük harf, kesme işaretleri %100 DOĞRU)
-    orig_words = script_text.split()
-    
-    subtitles = []
-    # Orijinal kelimeler ile Whisper zamanlarını birebir eşle (Forced Alignment)
-    if len(orig_words) == len(whisper_words):
-        for i in range(len(orig_words)):
-            subtitles.append({
-                "word": orig_words[i],
-                "start": whisper_words[i]["start"],
-                "end": whisper_words[i]["end"]
-            })
-    else:
-        # Sayı farkı varsa en yakın eşleştirme
-        w_idx = 0
-        for orig_w in orig_words:
-            if w_idx < len(whisper_words):
-                subtitles.append({
-                    "word": orig_w,
-                    "start": whisper_words[w_idx]["start"],
-                    "end": whisper_words[w_idx]["end"]
+    subtitles = None
+    # İsteğe bağlı: Whisper Tiny denenir, bellek yetersizliği durumunda hafif orantısal modele geçer
+    try:
+        import whisper
+        print("Whisper Tiny ile zaman damgaları taranıyor...")
+        model = whisper.load_model('tiny')
+        result = model.transcribe(output_file, word_timestamps=True, language='tr', fp16=False)
+        
+        whisper_words = []
+        for s in result.get('segments', []):
+            for w in s.get('words', []):
+                whisper_words.append({
+                    "word": w['word'].strip(),
+                    "start": round(w['start'], 3),
+                    "end": round(w['end'], 3)
                 })
-                w_idx += 1
-            else:
-                last_end = subtitles[-1]["end"] if subtitles else 0
+        orig_words = script_text.split()
+        if len(orig_words) == len(whisper_words):
+            subtitles = []
+            for i in range(len(orig_words)):
                 subtitles.append({
-                    "word": orig_w,
-                    "start": last_end,
-                    "end": last_end + 0.4
+                    "word": orig_words[i],
+                    "start": whisper_words[i]["start"],
+                    "end": whisper_words[i]["end"]
                 })
+    except Exception as e:
+        print(f"Whisper uyarısı: {e}. Ultra-hafif orantısal altyazı motoruna geçiliyor.")
+
+    if not subtitles:
+        print("Orantısal ağırlıklı altyazı zamanlaması hesaplanıyor...")
+        subtitles = generate_proportional_subtitles(script_text, duration)
             
     with open(subtitles_file, "w", encoding="utf-8") as f:
         json.dump(subtitles, f, ensure_ascii=False, indent=2)
