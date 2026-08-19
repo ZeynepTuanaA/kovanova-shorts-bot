@@ -81,9 +81,9 @@ def job_create_and_upload():
 
 def main():
     # -------------------------------------------------------------------
-    # SAATLER (Türkiye Saati / UTC+3): 10:00, 15:00, 20:00 + Test Saatleri
+    # STANDART ÜRETİM SAATLERİ (Türkiye Saati / UTC+3): 10:00, 15:00, 20:00
     # -------------------------------------------------------------------
-    TARGET_TIMES = ["10:00", "15:00", "20:00", "21:19", "21:21", "21:23"]
+    TARGET_TIMES = ["10:00", "15:00", "20:00"]
     
     print("=" * 60)
     print("🌟 Kovanova Studios Otomatik Zamanlayıcı Başlatıldı!")
